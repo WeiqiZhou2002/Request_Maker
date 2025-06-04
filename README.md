@@ -1,352 +1,248 @@
-# Course Schedule MCP Server
+# Google Calendar MCP Server
 
-An intelligent MCP (Model Context Protocol) server that automatically imports course schedules from registration PDFs into Google Calendar with full support for academic calendars, building locations, and holiday schedules.
+This is a Model Context Protocol (MCP) server that provides integration with Google Calendar. It allows LLMs to read, create, update and search for calendar events through a standardized interface.
 
-## Features
+## Example Usage
 
-### 🎓 Smart Course Extraction
-- Automatically extracts course information from registration PDFs
-- Recognizes course numbers, times, days, locations, and instructors
-- Supports multiple university PDF formats
+Along with the normal capabilities you would expect for a calendar integration you can also do really dynamic, multi-step processes like:
 
-### 📅 Academic Calendar Integration
-- Fetches official university academic calendars
-- Automatically excludes holidays and break periods
-- Supports different semester systems (quarters, semesters)
+1. Add events from screenshots and images:
+   ```
+   Add this event to my calendar based on the attached screenshot.
+   ```
+   Supported image formats: PNG, JPEG, GIF
+   Images can contain event details like date, time, location, and description
 
-### 📍 Location Intelligence
-- Geocodes classroom locations to physical addresses
-- Adds Google Maps links to event descriptions
-- Resolves building abbreviations to full names
-- Caches location data for performance
+2. Calendar analysis:
+   ```
+   What events do I have coming up this week that aren't part of my usual routine?
+   ```
+3. Check attendance:
+   ```
+   Which events tomorrow have attendees who have not accepted the invitation?
+   ```
+4. Auto coordinate events:
+   ```
+   Here's some available that was provided to me by someone.
+   Take a look at the available times and create an event that is free on my work calendar.
+   ```
+5. Provide your own availability:
+   ```
+   Please provide availability looking at both my personal and work calendar for this upcoming week.
+   Choose times that work well for normal working hours on the East Coast. Meeting time is 1 hour
+   ```
 
-### 🔄 Recurring Events
-- Creates properly formatted recurring calendar events
-- Handles different class meeting patterns (MWF, TR, etc.)
-- Supports labs and discussion sections
-- Excludes holidays and breaks automatically
+## Requirements
+
+1. Node.js (Latest LTS recommended)
+2. TypeScript 5.3 or higher
+3. A Google Cloud project with the Calendar API enabled
+4. OAuth 2.0 credentials (Client ID and Client Secret)
+
+## Google Cloud Setup
+
+1. Go to the [Google Cloud Console](https://console.cloud.google.com)
+2. Create a new project or select an existing one.
+3. Enable the [Google Calendar API](https://console.cloud.google.com/apis/library/calendar-json.googleapis.com) for your project. Ensure that the right project is selected from the top bar before enabling the API.
+4. Create OAuth 2.0 credentials:
+   - Go to Credentials
+   - Click "Create Credentials" > "OAuth client ID"
+   - Choose "User data" for the type of data that the app will be accessing
+   - Add your app name and contact information
+   - Add the following scopes (optional):
+     - `https://www.googleapis.com/auth/calendar.events` (or broader `https://www.googleapis.com/auth/calendar` if needed)
+   - Select "Desktop app" as the application type (Important!)
+   - Add your email address as a test user under the [OAuth Consent screen](https://console.cloud.google.com/apis/credentials/consent)
+      - Note: it will take a few minutes for the test user to be added. The OAuth consent will not allow you to proceed until the test user has propagated.
+      - Note about test mode: While an app is in test mode the auth tokens will expire after 1 week and need to be refreshed by running `npm run auth`.
 
 ## Installation
 
-### Prerequisites
-- Node.js 18+ and npm
-- Google Cloud Project with Calendar API enabled
-- OAuth 2.0 credentials (Desktop application type)
-- (Optional) Google Maps API key for geocoding
-
-### Setup Steps
-
-1. **Clone the repository**
-```bash
-git clone https://github.com/WeiqiZhou2002/course_calendar.git
-cd course-schedule-mcp
-```
-
-2. **Install dependencies**
-```bash
-npm install
-```
-
-3. **Configure Google OAuth**
-   - Go to [Google Cloud Console](https://console.cloud.google.com)
-   - Create or select a project
-   - Enable the Google Calendar API
-   - Create OAuth 2.0 credentials (Desktop app type)
-   - Download credentials and save as `gcp-oauth.keys.json`
-
-4. **Set up environment variables**
-```bash
-cp .env.example .env
-# Edit .env with your API keys
-```
-
-5. **Build the project**
-```bash
-npm run build
-```
-
-6. **Authenticate with Google**
-```bash
-npm run auth
-```
-
-7. **Configure Claude Desktop**
-Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
-```json
-{
-  "mcpServers": {
-    "course-schedule": {
-      "command": "node",
-      "args": ["/absolute/path/to/course-schedule-mcp/build/index.js"]
-    }
-  }
-}
-```
-
-## Usage
-
-### Basic Commands
-
-#### Import Course Schedule
-```
-Import my course schedule from the PDF at /path/to/registration.pdf for UCLA
-```
-
-#### Preview Before Import
-```
-Preview the courses found in my registration PDF for USC
-```
-
-#### Update Course Location
-```
-Update the location for CS 131 to Engineering VI 289
-```
-
-### Example Workflow
-
-1. **Upload your registration PDF** to Claude Desktop
-
-2. **Preview the extracted information**:
+1. Clone the repository
+2. Install dependencies (this also builds the js via postinstall):
+   ```bash
+   npm install
    ```
-   Can you preview the courses in my registration PDF for UCLA?
-   ```
-   
-   This will show:
-   - Extracted courses with times and locations
-   - Detected semester dates
-   - Academic holidays and breaks
-   - Any parsing issues
+3. Download your Google OAuth credentials from the Google Cloud Console (under "Credentials") and rename the file to `gcp-oauth.keys.json` and place it in the root directory of the project.
+   - Ensure the file contains credentials for a "Desktop app".
+   - Alternatively, copy the provided template file: `cp gcp-oauth.keys.example.json gcp-oauth.keys.json` and populate it with your credentials from the Google Cloud Console.
 
-3. **Import to calendar**:
-   ```
-   Please import my course schedule to Google Calendar
-   ```
-   
-   The server will:
-   - Create recurring events for each course
-   - Add location details with map links
-   - Set up reminders
-   - Exclude holidays and breaks
+## Policy Configuration (`policy.yml`)
 
-4. **Fix any issues**:
-   ```
-   The location for MATH 131A should be MS 4000A, can you update it?
-   ```
+The Google‑Calendar MCP server has a **pluggable policy layer** that lets you whitelist calendars and restrict **read / write / delete** operations to specific time windows.  
+By editing one YAML file you can tighten or relax the server’s behaviour without touching TypeScript.
 
-### Advanced Features
+### 1  Where does the file live?
 
-#### Custom Color Coding
-```
-Import my schedule with lectures in blue, labs in green, and discussions in red
-```
+| Location                       | How to change                                                                |
+| ------------------------------ | ---------------------------------------------------------------------------- |
+| **Default** → `src/config/policy.yml` | No action needed; the server loads it automatically.                      |
+| Custom path                    | Set an env‑var before you start the server:<br>`export MCP_POLICY_FILE=/path/to/my_policy.yml` |
 
-#### Specific Calendar
-```
-Import my courses to my "School" calendar instead of primary
-```
+> **Hot‑reload** The file is watched; save a change and it takes effect within a second (no restart).
 
-#### Exclude Certain Courses
-```
-Import all courses except for the PE classes
-```
-
-## Supported Universities
-
-The server comes pre-configured with support for:
-
-- **UCLA** - University of California, Los Angeles
-- **USC** - University of Southern California  
-- **UC Berkeley** - University of California, Berkeley
-- **Stanford** - Stanford University
-
-### Adding a New University
-
-1. Add university configuration to `src/config/universities.yml`:
-```yaml
-YourUniversity:
-  full_name: "Your University Name"
-  academic_calendar_url: "https://..."
-  timezone: "America/New_York"
-  semester_patterns:
-    fall:
-      typical_start: "late August"
-      typical_end: "mid December"
-```
-
-2. Add building mappings for common abbreviations
-3. Test with a sample PDF
-
-## PDF Format Requirements
-
-The PDF parser looks for common patterns in registration documents:
-
-### Required Information
-- **Course Number**: e.g., "CS 131", "MATH 32A"
-- **Meeting Days**: e.g., "MWF", "TR"
-- **Meeting Times**: e.g., "10:00 AM - 11:50 AM"
-
-### Optional Information
-- **Location**: e.g., "BOELTER 3400"
-- **Instructor**: e.g., "Smith, John"
-- **Units/Credits**: e.g., "4 units"
-- **Course Title**: e.g., "Programming Languages"
-
-### Example PDF Content
-```
-COMPUTER SCI 131 - Programming Languages (4 units)
-Lecture: MWF 10:00 AM - 10:50 AM in BOELTER 3400
-Discussion 1A: T 2:00 PM - 3:50 PM in BOELTER 2444
-Instructor: Eggert, P.R.
-```
-
-## Configuration
-
-### Policy Configuration (`src/config/policy.yml`)
-
-Control server behavior with fine-grained policies:
+### 2  YAML schema
 
 ```yaml
+# src/config/policy.yml
+timezone: America/Chicago        # Single source of truth for DST handling
+
 actions:
-  import:
+  read:
     enabled: true
-    max_courses_per_import: 20
-    
-events:
-  max_future_days: 365
-  default_reminders:
-    - method: "popup"
-      minutes: 15
+    max_future_days: 3           # deny any list/freeBusy that ends > 3 days out
+
+  write:                         # covers create/update/patch
+    enabled: true
+    max_future_days: 7
+
+  delete:
+    enabled: false               # block deletes altogether (override if you wish)
+
+calendars:
+  whitelist:
+    - primary
+    - personal_projects@group.calendar.google.com
 ```
 
-### University Configuration
+*If no YAML is found the server prints a warning and falls back to permissive defaults (all actions allowed, no time limits).*
 
-Customize parsing patterns and calendar behavior per university:
 
-```yaml
-university_policies:
-  UCLA:
-    require_location: true
-    default_event_duration_minutes: 50
-```
+### 3  What happens if a request violates the policy?
 
-## Troubleshooting
+* The MCP server throws an error with `code: "MCP_POLICY_VIOLATION"` (HTTP 403).  
+  *Example message:* `write denied: 2025‑07‑01 beyond 7‑day window`.
+* LLM clients can catch that error and ask the user for a new time range.
 
-### Common Issues
+## Available Scripts
 
-#### PDF Parsing Issues
-- **No courses found**: Check if PDF is text-based (not scanned image)
-- **Missing information**: Ensure PDF follows expected format
-- **Wrong semester detected**: Manually specify in the import command
+- `npm run build` - Build the TypeScript code (compiles `src` to `build`)
+- `npm run typecheck` - Run TypeScript type checking without compiling
+- `npm run start` - Start the compiled MCP server (using `node build/index.js`)
+- `npm run auth` - Manually run the Google OAuth authentication flow.
+- `npm test` - Run the unit/integration test suite using Vitest
+- `npm run test:watch` - Run tests in watch mode
+- `npm run coverage` - Run tests and generate a coverage report
 
-#### Location Issues
-- **Location not found**: Building might not be in geocoding database
-- **Wrong location**: Use the update_location tool to correct
-- **No map link**: Ensure GOOGLE_MAPS_API_KEY is set
+## Authentication
 
-#### Calendar Issues
-- **Events not created**: Check OAuth authentication is valid
-- **Wrong timezone**: Update timezone in university config
-- **Holidays not excluded**: Verify academic calendar URL is correct
+The server handles Google OAuth 2.0 authentication to access your calendar data.
 
-### Debug Mode
+### Automatic Authentication Flow (During Server Start)
 
-Enable detailed logging:
-```bash
-LOG_LEVEL=debug npm start
-```
+1. Ensure `gcp-oauth.keys.json` is correctly named and placed in the project root.
+2. Start the MCP server: `npm start`.
+3. The server will check for existing, valid authentication tokens in `.gcp-saved-tokens.json`.
+4. If valid tokens are found, the server starts normally.
+5. If no valid tokens are found:
+   - The server attempts to start a temporary local web server (trying ports 3000-3004).
+   - Your default web browser will automatically open to the Google Account login and consent screen.
+   - Follow the prompts in the browser to authorize the application.
+   - Upon successful authorization, you will be redirected to a local page (e.g., `http://localhost:3000/oauth2callback`).
+   - This page will display a success message confirming that the tokens have been saved to `.gcp-saved-tokens.json` (and show the exact file path).
+   - The temporary auth server shuts down automatically.
+   - The main MCP server continues its startup process.
 
-View logs in `course-schedule-mcp.log`
+### Manual Authentication Flow
+
+If you need to re-authenticate or prefer to handle authentication separately:
+
+1. Run the command: `npm run auth`
+2. This script performs the same browser-based authentication flow described above.
+3. Your browser will open, you authorize, and you'll see the success page indicating where tokens were saved.
+4. The script will exit automatically upon successful authentication.
+
+### Token Management
+
+- Authentication tokens are stored in `.gcp-saved-tokens.json` in the project root.
+- This file is created automatically and should **not** be committed to version control (it's included in `.gitignore`).
+- The server attempts to automatically refresh expired access tokens using the stored refresh token.
+- If the refresh token itself expires (e.g., after 7 days if the Google Cloud app is in testing mode) or is revoked, you will need to re-authenticate using either the automatic flow (by restarting the server) or the manual `npm run auth` command.
+
+## Testing
+
+Unit and integration tests are implemented using [Vitest](https://vitest.dev/).
+
+- Run tests: `npm test`
+- Run tests in watch mode: `npm run test:watch`
+- Generate coverage report: `npm run coverage`
+
+Tests mock external dependencies (Google API, filesystem) to ensure isolated testing of server logic and handlers.
+
+## Security Notes
+
+- The server runs locally and requires OAuth authentication.
+- OAuth credentials (`gcp-oauth.keys.json`) and saved tokens (`.gcp-saved-tokens.json`) should **never** be committed to version control. Ensure they are added to your `.gitignore` file.
+- For production use, consider getting your OAuth application verified by Google.
+
+## Usage with Claude Desktop
+
+1. Add this configuration to your Claude Desktop config file. E.g. `/Users/<user>/Library/Application Support/Claude/claude_desktop_config.json`:
+   ```json
+   {
+     "mcpServers": {
+       "google-calendar": {
+         "command": "node",
+         "args": ["<absolute-path-to-project-folder>/build/index.js"]
+       }
+     }
+   }
+   ```
+   Note: Replace `<absolute-path-to-project-folder>` with the actual path to your project directory.
+
+2. Restart Claude Desktop
+
 
 ## Development
 
-### Project Structure
-```
-course-schedule-mcp/
-├── src/
-│   ├── index.ts              # Main server entry
-│   ├── parsers/              # PDF parsing logic
-│   ├── services/             # Calendar, geocoding services
-│   ├── tools/                # MCP tool definitions
-│   ├── config/               # Configuration files
-│   └── types/                # TypeScript types
-├── tests/                    # Test suites
-├── examples/                 # Sample PDFs
-└── docs/                     # Additional documentation
-```
+### Troubleshooting
 
-### Running Tests
+1. **Authentication Errors / Connection Reset on Callback:**
+   - Ensure `gcp-oauth.keys.json` exists and contains credentials for a **Desktop App** type.
+   - Verify your user email is added as a **Test User** in the Google Cloud OAuth Consent screen settings (allow a few minutes for changes to propagate).
+   - Try deleting `.gcp-saved-tokens.json` and re-authenticating (`npm run auth` or restart `npm start`).
+   - Check that no other process is blocking ports 3000-3004 when authentication is required.
+
+2. **Tokens Expire Weekly:**
+   - If your Google Cloud app is in **Testing** mode, refresh tokens expire after 7 days. Re-authenticate when needed.
+   - Consider moving your app to **Production** in the Google Cloud Console for longer-lived refresh tokens (requires verification by Google).
+
+3. **Build Errors:**
+   - Run `npm install` again.
+   - Check Node.js version (use LTS).
+   - Delete the `build/` directory and run `npm run build`.
+
+if you are a developer want to contribute this repository, please kindly take a look at [Architecture Overview](docs/architecture.md) before contributing
+
+## Debug with Breakpoint
+
+### 1  Start the server in debug mode
+
 ```bash
-npm test                      # Run all tests
-npm run test:watch           # Watch mode
-npm run coverage             # Coverage report
+npx @modelcontextprotocol/inspector node --inspect build/index.js
 ```
 
-### Adding Features
+This launches your MCP server **and** Node’s V8 Inspector on port `9229`.
 
-1. **New PDF Format**: Add patterns to `pdfParser.ts`
-2. **New University**: Update `universities.yml`
-3. **New Tool**: Add to `src/tools/` and register in `index.ts`
-
-## Security & Privacy
-
-- **OAuth tokens** are stored locally in `.gcp-saved-tokens.json`
-- **No data is sent** to external servers except Google APIs
-- **PDF content** is processed locally and not stored
-- **Location cache** is kept in memory only
-
-## Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Submit a pull request
-
-## License
-
-MIT License - see LICENSE file for details
-
-## Acknowledgments
-
-Built on top of:
-- [Google Calendar MCP Server](https://github.com/WeiqiZhou2002/google-calendar-mcp) by WeiqiZhou2002
-- Anthropic's MCP SDK
-- Google Calendar API
-
-## Support
-
-For issues and questions:
-- Check [existing issues](https://github.com/yourusername/course-schedule-mcp/issues)
-- Review debug logs
-- Create a new issue with:
-  - University name
-  - Sample PDF structure (anonymized)
-  - Error messages
-  - Debug logs
 
 ---
 
-## Quick Start Example
+### 2  Open Chrome DevTools
 
-```bash
-# 1. Install and build
-npm install && npm run build
+1. In the address bar, type `chrome://inspect` and press **Enter**.  
+2. Click **Configure…** → ensure `localhost:9229` is listed → **Done**.
 
-# 2. Authenticate
-npm run auth
+---
 
-# 3. Start server
-npm start
+### 3  Attach and set breakpoints
 
-# 4. In Claude Desktop:
-# "Import my UCLA course schedule from ~/Downloads/registration.pdf"
-```
+1. Under **Remote Target**, find your script and click **inspect**.  
+2. A DevTools window opens on the **Sources** panel.  
+3. Browse to any `.js`/`.ts` file and click the gutter to drop breakpoints.  
+4. Interact with your server—execution stops when it hits a breakpoint.
 
-The server will:
-✅ Extract 5 courses from your PDF  
-✅ Find Fall 2024 semester dates (Sep 26 - Dec 13)  
-✅ Skip Thanksgiving break (Nov 25-29)  
-✅ Add building locations with maps  
-✅ Create recurring calendar events  
-✅ Set up email and popup reminders  
+---
 
-Your courses are now in Google Calendar! 🎉
+## License
+
+MIT

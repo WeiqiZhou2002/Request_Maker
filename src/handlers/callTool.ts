@@ -1,8 +1,10 @@
 import { CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { OAuth2Client } from 'google-auth-library';
-import { CreateEventHandler } from "./CreateEventHandler.js";
-import { BaseToolHandler } from "./BaseToolHandler.js";
-
+import { BaseToolHandler } from "./core/BaseToolHandler.js";
+import { ListCalendarsHandler } from "./core/ListCalendarsHandler.js";
+import { ListColorsHandler } from "./core/ListColorsHandler.js";
+import { CreateEventHandler } from "./core/CreateEventHandler.js";
+import { DeleteEventHandler } from "./core/DeleteEventHandler.js";
 
 /**
  * Handles incoming tool calls, validates arguments, calls the appropriate service,
@@ -26,8 +28,10 @@ export async function handleCallTool(request: typeof CallToolRequestSchema._type
 }
 
 const handlerMap: Record<string, BaseToolHandler> = {
+    "list-calendars": new ListCalendarsHandler(),
+    "list-colors": new ListColorsHandler(),
     "create-event": new CreateEventHandler(),
-   
+    "delete-event": new DeleteEventHandler(),
 };
 
 function getHandler(toolName: string): BaseToolHandler {

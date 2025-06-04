@@ -1,10 +1,10 @@
 import { CallToolResult } from "@modelcontextprotocol/sdk/types.js";
 import { OAuth2Client } from "google-auth-library";
-import { CreateEventArgumentsSchema } from "../schemas/validators.js";
+import { CreateEventArgumentsSchema } from "../../schemas/validators.js";
 import { BaseToolHandler } from "./BaseToolHandler.js";
 import { calendar_v3, google } from 'googleapis';
 import { z } from 'zod';
-import { CalendarApi } from "../calendarAPI.js"
+import { CalendarApi } from "../../calendarAPI.js"
 
 export class CreateEventHandler extends BaseToolHandler {
     async runTool(args: any, auth: OAuth2Client): Promise<CallToolResult> {
