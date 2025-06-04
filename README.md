@@ -38,7 +38,7 @@ An intelligent MCP (Model Context Protocol) server that automatically imports co
 
 1. **Clone the repository**
 ```bash
-git clone https://github.com/yourusername/course-schedule-mcp.git
+git clone https://github.com/WeiqiZhou2002/course_calendar.git
 cd course-schedule-mcp
 ```
 
