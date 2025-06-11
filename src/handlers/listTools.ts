@@ -141,6 +141,112 @@ export function getToolDefinitions() {
           required: ["calendarId", "eventId"],
         },
       },
+      {
+        name: "course-schedule",
+        description: "Create events to indicate course schedule",
+        inputSchema: {
+          type: "object",
+          properties: {
+            courseName: { type: "string" },
+            courseCode: { type: "string" },
+            courseType: { type: "string", description: "e.g. lecture, lab, tutorial" },
+    
+          startTime: {
+            type: "string",
+            pattern: "^\\d{2}:\\d{2}$",
+            description: "Class start time (24‑h HH:MM, local)",
+          },
+          endTime: {
+            type: "string",
+            pattern: "^\\d{2}:\\d{2}$",
+            description: "Class end time (24‑h HH:MM, local)",
+          },
+
+          timeZone:    {
+            type: "string",
+            description: "IANA time‑zone used when constructing DateTimes, e.g. 'America/Chicago'."
+          },
+    
+          recurrence: {
+            type: "object",
+            additionalProperties: false,
+            required: ["pattern"],
+            properties: {
+              pattern: {
+                type: "string",
+                pattern: "^[MTWRFSU]+$",
+                description:
+                  "Days of week as letters MTWRFSU (e.g. 'MWF', 'TR', 'SU').",
+              },
+            },
+          },
+    
+          location: {
+            type: "object",
+            additionalProperties: false,
+            required: ["building", "roomNumber"],
+            properties: {
+              building: { type: "string" },
+              roomNumber: { type: "string" },
+              coordinates: {
+                type: "object",
+                additionalProperties: false,
+                required: ["latitude", "longitude"],
+                properties: {
+                  latitude: { type: "number" },
+                  longitude: { type: "number" },
+                },
+              },
+            },
+          },
+    
+          instructor: {
+            type: "object",
+            additionalProperties: false,
+            required: ["name", "email"],
+            properties: {
+              name: { type: "string" },
+              email: { type: "string", format: "email" },
+            },
+          },
+    
+          semester: {
+            type: "object",
+            additionalProperties: false,
+            required: ["name", "startDate", "endDate"],
+            properties: {
+              name: { type: "string" },
+              startDate: { type: "string", format: "date-time" },
+              endDate: { type: "string", format: "date-time" },
+              holidays: {
+                type: "array",
+                items: {
+                  type: "object",
+                  additionalProperties: false,
+                  required: ["date", "name"],
+                  properties: {
+                    date: { type: "string", format: "date-time" },
+                    name: { type: "string" },
+                  },
+                },
+              },
+            },
+          },
+        },
+    
+        required: [
+          "courseName",
+          "courseCode",
+          "courseType",
+          "startTime",
+          "endTime",
+          "recurrence",
+          "location",
+          "instructor",
+          "semester",
+        ],
+        },
+      },
     ],
   };
 } 

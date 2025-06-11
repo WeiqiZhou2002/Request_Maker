@@ -5,6 +5,7 @@ import { ListCalendarsHandler } from "./core/ListCalendarsHandler.js";
 import { ListColorsHandler } from "./core/ListColorsHandler.js";
 import { CreateEventHandler } from "./core/CreateEventHandler.js";
 import { DeleteEventHandler } from "./core/DeleteEventHandler.js";
+import { CreateCourseScheduleHandler } from "./core/CourseScheduleHandler.js";
 
 /**
  * Handles incoming tool calls, validates arguments, calls the appropriate service,
@@ -32,6 +33,7 @@ const handlerMap: Record<string, BaseToolHandler> = {
     "list-colors": new ListColorsHandler(),
     "create-event": new CreateEventHandler(),
     "delete-event": new DeleteEventHandler(),
+    "course-schedule": new CreateCourseScheduleHandler(),
 };
 
 function getHandler(toolName: string): BaseToolHandler {

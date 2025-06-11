@@ -5,28 +5,50 @@ import { BaseToolHandler } from "./BaseToolHandler.js";
 import { calendar_v3, google } from 'googleapis';
 import { z } from 'zod';
 import { CalendarApi } from "../../calendarAPI.js"
+import { RequestEnvelope, RequestProcessor } from "../../GenericRequestProcessor.js";
 
 export class CreateEventHandler extends BaseToolHandler {
     async runTool(args: any, auth: OAuth2Client): Promise<CallToolResult> {
-      const res = await CalendarApi.createEvent(auth, {
-        calendarId: "primary",
-        requestBody: {
-            summary: args.summary,
+      // const res = await CalendarApi.createEvent(auth, {
+      //   calendarId: "primary",
+      //   requestBody: {
+      //       summary: args.summary,
+      //       description: args.description,
+      //       start: { dateTime: args.start, timeZone: args.timeZone },
+      //       end: { dateTime: args.end, timeZone: args.timeZone },
+      //       attendees: args.attendees,
+      //       location: args.location,
+      //       colorId: args.colorId,
+      //       reminders: args.reminders,
+      //       recurrence: args.recurrence,
+      //   },
+      // });
+      // const event = res.data;
+      const envelope: RequestEnvelope = {
+        verb: "INSERT",
+        endpoint: "google.calendar.events", 
+        auth,                               
+        payload: {
+          calendarId: "primary",
+          requestBody: {
+            summary:     args.summary,
             description: args.description,
-            start: { dateTime: args.start, timeZone: args.timeZone },
-            end: { dateTime: args.end, timeZone: args.timeZone },
-            attendees: args.attendees,
-            location: args.location,
-            colorId: args.colorId,
-            reminders: args.reminders,
-            recurrence: args.recurrence,
+            start:       { dateTime: args.start, timeZone: args.timeZone },
+            end:         { dateTime: args.end,   timeZone: args.timeZone },
+            attendees:   args.attendees,
+            location:    args.location,
+            colorId:     args.colorId,
+            reminders:   args.reminders,
+            recurrence:  args.recurrence,
+          },
         },
-      });
-      const event = res.data;
+      };
+      const rp   = new RequestProcessor();
+      const res  = await rp.process(envelope);
       return {
                     content: [{
                       type: "text",
-                      text: `Event created: ${event.summary} (${event.id})`,
+                      text: `Event created: ${args.summary}`,
                     }],
                 };
     }
