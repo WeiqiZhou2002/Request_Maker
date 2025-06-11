@@ -6,25 +6,23 @@ import { pathToFileURL } from "url";
 import { URLSearchParams } from "url";
 import { CalendarApi } from "./calendarAPI.js";
 import { Verb, logRest } from "./RestAction.js";
-
+import readline from "node:readline/promises";
+import { stdin as input, stdout as output } from "node:process";
 
 
 
 export interface RequestEnvelope {
   verb: Verb;
   auth: OAuth2Client;
-  endpoint: string; // dotted path e.g. google.calendar.events.insert
+  endpoint: string;
   payload: any;
 }
 
 export class RequestProcessor {
 
   async process(r: RequestEnvelope) {
-    // normalise verb to UPPER‑CASE
     const verb = r.verb.toUpperCase() as Verb;
     const dotted = r.endpoint;
-
-    // Quick validation: ensure prefix is google.calendar
     if (!dotted.startsWith("google.calendar.")) {
       throw new Error(`Endpoint '${dotted}' not supported (expect 'google.calendar.*').`);
     }
@@ -35,7 +33,7 @@ export class RequestProcessor {
     logRest({
         ts: new Date().toISOString(),
         verb: verb,
-        endpoint: resolved.dotted,        // e.g. google.calendar.events.insert
+        endpoint: r.endpoint,
         payload: r.payload,
       });
   
