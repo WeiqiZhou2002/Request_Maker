@@ -14,6 +14,10 @@ export interface RestAction {
   endpoint: string;      
   payload: unknown;
 }
+let transportRef: any = null;
+export function initAudit(transport: any) {
+    transportRef = transport;
+  }
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const LOG_PATH = path.join(__dirname,  "..", "logs", "audit.log");

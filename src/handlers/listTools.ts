@@ -46,6 +46,19 @@ export function getToolDefinitions() {
         },
       },
       {
+        name: "make-request",
+        description: "Turn JSON-formatted request into a real API call and return the result",
+        inputSchema: {
+          type: "object",
+          properties: {
+            verb:       { type: "string", description: "HTTP verb or MCP action (e.g., INSERT, UPDATE)" },
+            endpoint:   { type: "string", description: "Target MCP endpoint (e.g., google.calendar.events)" },
+            payload:    { type: "object", description: "Request payload matching the endpoint’s schema" }
+          },
+          required: ["verb", "endpoint", "payload"]
+        },
+      },      
+      {
         name: "list-colors",
         description: "List available color IDs and their meanings for calendar events",
         inputSchema: {
@@ -56,7 +69,7 @@ export function getToolDefinitions() {
       },
       {
         name: "create-event",
-        description: "Create a new calendar event",
+        description: "Create a formatted new calendar event request, still need user's permission and pass the request to resources mcp to make the real request",
         inputSchema: {
           type: "object",
           properties: {

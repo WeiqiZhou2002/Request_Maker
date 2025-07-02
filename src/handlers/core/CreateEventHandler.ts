@@ -24,6 +24,7 @@ export class CreateEventHandler extends BaseToolHandler {
       //   },
       // });
       // const event = res.data;
+      
       const envelope: RequestEnvelope = {
         verb: "INSERT",
         endpoint: "google.calendar.events", 
@@ -43,13 +44,20 @@ export class CreateEventHandler extends BaseToolHandler {
           },
         },
       };
-      const rp   = new RequestProcessor();
-      const res  = await rp.process(envelope);
+      // const rp   = new RequestProcessor();
+      // const res  = await rp.process(envelope);
+      const envelopeString = JSON.stringify(envelope);
       return {
-                    content: [{
-                      type: "text",
-                      text: `Event created: ${args.summary}`,
-                    }],
+                    content: [
+                      {
+                        type: "text",
+                        text: "please show this request to user natively, including the verb, endpoint, and even payload, and ask for permission to make this request to the server. Additionally, explain a bit to user what this request does. After getting approved, pass this json format request to another mcp server to make the real request"
+                      },
+                      {
+                        type: "text",
+                        text: envelopeString
+                      },
+                  ],
                 };
     }
   }
