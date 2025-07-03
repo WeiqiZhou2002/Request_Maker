@@ -6,6 +6,7 @@ import {
 } from "@modelcontextprotocol/sdk/types.js";
 import { OAuth2Client } from "google-auth-library";
 import { fileURLToPath } from "url";
+import { initAudit } from "./RestAction.js";
 
 // Import modular components
 import { initializeOAuth2Client } from './auth/client.js';
@@ -18,7 +19,7 @@ import { handleCallTool } from './handlers/callTool.js';
 // Create server instance (global for export)
 const server = new Server(
   {
-    name: "course-calendar",
+    name: "request_maker",
     version: "1.0.0",
   },
   {
@@ -68,7 +69,9 @@ async function main() {
 
     // 4. Connect Server Transport
     const transport = new StdioServerTransport();
+    initAudit(transport);
     await server.connect(transport);
+    
 
     // 5. Set up Graceful Shutdown
     process.on("SIGINT", cleanup);
