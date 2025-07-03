@@ -1,103 +1,60 @@
-# Google Calendar MCP Server
+# Request Maker MCP Server
 
-This is a Model Context Protocol (MCP) server that provides integration with Google Calendar. It allows LLMs to read, create, update and search for calendar events through a standardized interface.
+**Request Maker** is a Model Context Protocol (MCP) server that provides seamless integration with Google Calendar. It allows LLMs and other clients to read, create, update, and search calendar events through a standardized interface, supporting both simple queries and complex, multi-step workflows.
 
-## Example Usage
+## Features
 
-Along with the normal capabilities you would expect for a calendar integration you can also do really dynamic, multi-step processes like:
+- **Event Management**: Create, read, update, and delete events using Google Calendar API.
+- **Image-Based Event Creation**: Attach PNG, JPEG, or GIF images containing event details (date, time, location, description) and automatically convert them into calendar events.
+- **Advanced Queries**: 
+  - Identify routine vs. ad-hoc events.
+  - Check attendee responses for upcoming events.
+  - Auto-coordinate across multiple calendars to find mutually available times.
+- **Policy Configuration**: Enforce read/write/delete permissions and time-window restrictions via a hot-reloadable `policy.yml`.
+- **OAuth 2.0 Authentication**: Built-in Google OAuth flow with automatic token refresh and manual re-authentication commands.
+- **Extensible & Configurable**: Easily whitelist calendars, adjust action limits, and integrate with clients like Claude Desktop.
 
-1. Add events from screenshots and images:
+## Quick Start
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/WeiqiZhou2002/Request_Maker.git
+   cd Request_Maker
    ```
-   Add this event to my calendar based on the attached screenshot.
-   ```
-   Supported image formats: PNG, JPEG, GIF
-   Images can contain event details like date, time, location, and description
-
-2. Calendar analysis:
-   ```
-   What events do I have coming up this week that aren't part of my usual routine?
-   ```
-3. Check attendance:
-   ```
-   Which events tomorrow have attendees who have not accepted the invitation?
-   ```
-4. Auto coordinate events:
-   ```
-   Here's some available that was provided to me by someone.
-   Take a look at the available times and create an event that is free on my work calendar.
-   ```
-5. Provide your own availability:
-   ```
-   Please provide availability looking at both my personal and work calendar for this upcoming week.
-   Choose times that work well for normal working hours on the East Coast. Meeting time is 1 hour
-   ```
-
-## Requirements
-
-1. Node.js (Latest LTS recommended)
-2. TypeScript 5.3 or higher
-3. A Google Cloud project with the Calendar API enabled
-4. OAuth 2.0 credentials (Client ID and Client Secret)
-
-## Google Cloud Setup
-
-1. Go to the [Google Cloud Console](https://console.cloud.google.com)
-2. Create a new project or select an existing one.
-3. Enable the [Google Calendar API](https://console.cloud.google.com/apis/library/calendar-json.googleapis.com) for your project. Ensure that the right project is selected from the top bar before enabling the API.
-4. Create OAuth 2.0 credentials:
-   - Go to Credentials
-   - Click "Create Credentials" > "OAuth client ID"
-   - Choose "User data" for the type of data that the app will be accessing
-   - Add your app name and contact information
-   - Add the following scopes (optional):
-     - `https://www.googleapis.com/auth/calendar.events` (or broader `https://www.googleapis.com/auth/calendar` if needed)
-   - Select "Desktop app" as the application type (Important!)
-   - Add your email address as a test user under the [OAuth Consent screen](https://console.cloud.google.com/apis/credentials/consent)
-      - Note: it will take a few minutes for the test user to be added. The OAuth consent will not allow you to proceed until the test user has propagated.
-      - Note about test mode: While an app is in test mode the auth tokens will expire after 1 week and need to be refreshed by running `npm run auth`.
-
-## Installation
-
-1. Clone the repository
-2. Install dependencies (this also builds the js via postinstall):
+2. **Install dependencies**
    ```bash
    npm install
    ```
-3. Download your Google OAuth credentials from the Google Cloud Console (under "Credentials") and rename the file to `gcp-oauth.keys.json` and place it in the root directory of the project.
-   - Ensure the file contains credentials for a "Desktop app".
-   - Alternatively, copy the provided template file: `cp gcp-oauth.keys.example.json gcp-oauth.keys.json` and populate it with your credentials from the Google Cloud Console.
+3. **Set up Google OAuth credentials**
+   - Download your OAuth credentials from [Google Cloud Console](https://console.cloud.google.com/apis/credentials).
+   - Rename to `gcp-oauth.keys.json` and place in the project root.
+4. **Configure Policy (optional)**
+   - Edit `src/config/policy.yml` or set `MCP_POLICY_FILE` to customize calendar access policies.
+5. **Authenticate**
+   ```bash
+   npm run auth
+   ```
+6. **Start the server**
+   ```bash
+   npm start
+   ```
 
 ## Policy Configuration (`policy.yml`)
 
-The Google‑Calendar MCP server has a **pluggable policy layer** that lets you whitelist calendars and restrict **read / write / delete** operations to specific time windows.  
-By editing one YAML file you can tighten or relax the server’s behaviour without touching TypeScript.
-
-### 1  Where does the file live?
-
-| Location                       | How to change                                                                |
-| ------------------------------ | ---------------------------------------------------------------------------- |
-| **Default** → `src/config/policy.yml` | No action needed; the server loads it automatically.                      |
-| Custom path                    | Set an env‑var before you start the server:<br>`export MCP_POLICY_FILE=/path/to/my_policy.yml` |
-
-> **Hot‑reload** The file is watched; save a change and it takes effect within a second (no restart).
-
-### 2  YAML schema
+The policy file controls which calendars to access and enforces limits:
 
 ```yaml
-# src/config/policy.yml
-timezone: America/Chicago        # Single source of truth for DST handling
+timezone: America/Chicago
 
 actions:
   read:
     enabled: true
-    max_future_days: 3           # deny any list/freeBusy that ends > 3 days out
-
-  write:                         # covers create/update/patch
+    max_future_days: 3
+  write:
     enabled: true
     max_future_days: 7
-
   delete:
-    enabled: false               # block deletes altogether (override if you wish)
+    enabled: false
 
 calendars:
   whitelist:
@@ -105,144 +62,43 @@ calendars:
     - personal_projects@group.calendar.google.com
 ```
 
-*If no YAML is found the server prints a warning and falls back to permissive defaults (all actions allowed, no time limits).*
-
-
-### 3  What happens if a request violates the policy?
-
-* The MCP server throws an error with `code: "MCP_POLICY_VIOLATION"` (HTTP 403).  
-  *Example message:* `write denied: 2025‑07‑01 beyond 7‑day window`.
-* LLM clients can catch that error and ask the user for a new time range.
+- **Hot-reload**: Changes to `policy.yml` take effect immediately without restarting.
 
 ## Available Scripts
 
-- `npm run build` - Build the TypeScript code (compiles `src` to `build`)
-- `npm run typecheck` - Run TypeScript type checking without compiling
-- `npm run start` - Start the compiled MCP server (using `node build/index.js`)
-- `npm run auth` - Manually run the Google OAuth authentication flow.
-- `npm test` - Run the unit/integration test suite using Vitest
-- `npm run test:watch` - Run tests in watch mode
-- `npm run coverage` - Run tests and generate a coverage report
+- `npm run build` – Compile TypeScript sources.
+- `npm run typecheck` – Run TypeScript checks.
+- `npm run start` – Launch the MCP server.
+- `npm run auth` – Trigger OAuth authentication flow.
+- `npm test` – Run unit and integration tests (using Vitest).
+- `npm run test:watch` – Watch mode for tests.
+- `npm run coverage` – Generate test coverage report.
 
-## Authentication
+## Authentication Flows
 
-The server handles Google OAuth 2.0 authentication to access your calendar data.
+- **Automatic**: On server start, uses saved tokens in `.gcp-saved-tokens.json`, or opens browser for consent.
+- **Manual**: `npm run auth` to launch the browser-based consent flow independently.
 
-### Automatic Authentication Flow (During Server Start)
-
-1. Ensure `gcp-oauth.keys.json` is correctly named and placed in the project root.
-2. Start the MCP server: `npm start`.
-3. The server will check for existing, valid authentication tokens in `.gcp-saved-tokens.json`.
-4. If valid tokens are found, the server starts normally.
-5. If no valid tokens are found:
-   - The server attempts to start a temporary local web server (trying ports 3000-3004).
-   - Your default web browser will automatically open to the Google Account login and consent screen.
-   - Follow the prompts in the browser to authorize the application.
-   - Upon successful authorization, you will be redirected to a local page (e.g., `http://localhost:3000/oauth2callback`).
-   - This page will display a success message confirming that the tokens have been saved to `.gcp-saved-tokens.json` (and show the exact file path).
-   - The temporary auth server shuts down automatically.
-   - The main MCP server continues its startup process.
-
-### Manual Authentication Flow
-
-If you need to re-authenticate or prefer to handle authentication separately:
-
-1. Run the command: `npm run auth`
-2. This script performs the same browser-based authentication flow described above.
-3. Your browser will open, you authorize, and you'll see the success page indicating where tokens were saved.
-4. The script will exit automatically upon successful authentication.
-
-### Token Management
-
-- Authentication tokens are stored in `.gcp-saved-tokens.json` in the project root.
-- This file is created automatically and should **not** be committed to version control (it's included in `.gitignore`).
-- The server attempts to automatically refresh expired access tokens using the stored refresh token.
-- If the refresh token itself expires (e.g., after 7 days if the Google Cloud app is in testing mode) or is revoked, you will need to re-authenticate using either the automatic flow (by restarting the server) or the manual `npm run auth` command.
+Tokens expire after 7 days in testing mode; refresh using the above commands.
 
 ## Testing
 
-Unit and integration tests are implemented using [Vitest](https://vitest.dev/).
+Unit and integration tests are implemented with [Vitest](https://vitest.dev/). External dependencies (Google API, filesystem) are mocked for isolated testing.
 
-- Run tests: `npm test`
-- Run tests in watch mode: `npm run test:watch`
-- Generate coverage report: `npm run coverage`
+## Development & Debugging
 
-Tests mock external dependencies (Google API, filesystem) to ensure isolated testing of server logic and handlers.
-
-## Security Notes
-
-- The server runs locally and requires OAuth authentication.
-- OAuth credentials (`gcp-oauth.keys.json`) and saved tokens (`.gcp-saved-tokens.json`) should **never** be committed to version control. Ensure they are added to your `.gitignore` file.
-- For production use, consider getting your OAuth application verified by Google.
-
-## Usage with Claude Desktop
-
-1. Add this configuration to your Claude Desktop config file. E.g. `/Users/<user>/Library/Application Support/Claude/claude_desktop_config.json`:
-   ```json
-   {
-     "mcpServers": {
-       "google-calendar": {
-         "command": "node",
-         "args": ["<absolute-path-to-project-folder>/build/index.js"]
-       }
-     }
-   }
+1. **Debug mode**:
+   ```bash
+   npx @modelcontextprotocol/inspector node --inspect build/index.js
    ```
-   Note: Replace `<absolute-path-to-project-folder>` with the actual path to your project directory.
+2. **Attach debugger**:
+   - Open `chrome://inspect` in Chrome.
+   - Configure to `localhost:9229` and click **inspect**.
 
-2. Restart Claude Desktop
+## Contribution
 
-
-## Development
-
-### Troubleshooting
-
-1. **Authentication Errors / Connection Reset on Callback:**
-   - Ensure `gcp-oauth.keys.json` exists and contains credentials for a **Desktop App** type.
-   - Verify your user email is added as a **Test User** in the Google Cloud OAuth Consent screen settings (allow a few minutes for changes to propagate).
-   - Try deleting `.gcp-saved-tokens.json` and re-authenticating (`npm run auth` or restart `npm start`).
-   - Check that no other process is blocking ports 3000-3004 when authentication is required.
-
-2. **Tokens Expire Weekly:**
-   - If your Google Cloud app is in **Testing** mode, refresh tokens expire after 7 days. Re-authenticate when needed.
-   - Consider moving your app to **Production** in the Google Cloud Console for longer-lived refresh tokens (requires verification by Google).
-
-3. **Build Errors:**
-   - Run `npm install` again.
-   - Check Node.js version (use LTS).
-   - Delete the `build/` directory and run `npm run build`.
-
-if you are a developer want to contribute this repository, please kindly take a look at [Architecture Overview](docs/architecture.md) before contributing
-
-## Debug with Breakpoint
-
-### 1  Start the server in debug mode
-
-```bash
-npx @modelcontextprotocol/inspector node --inspect build/index.js
-```
-
-This launches your MCP server **and** Node’s V8 Inspector on port `9229`.
-
-
----
-
-### 2  Open Chrome DevTools
-
-1. In the address bar, type `chrome://inspect` and press **Enter**.  
-2. Click **Configure…** → ensure `localhost:9229` is listed → **Done**.
-
----
-
-### 3  Attach and set breakpoints
-
-1. Under **Remote Target**, find your script and click **inspect**.  
-2. A DevTools window opens on the **Sources** panel.  
-3. Browse to any `.js`/`.ts` file and click the gutter to drop breakpoints.  
-4. Interact with your server—execution stops when it hits a breakpoint.
-
----
+Contributions are welcome! Please review the [Architecture Overview](docs/architecture.md) before submitting pull requests.
 
 ## License
 
-MIT
+This project is licensed under the MIT License.

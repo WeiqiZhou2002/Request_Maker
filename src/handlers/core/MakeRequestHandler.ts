@@ -18,7 +18,6 @@ export class MakeRequestHandler extends BaseToolHandler {
         payload: args.payload,
         }
       const rp   = new RequestProcessor();
-      const res  = await rp.process(envelope);
       try {
         const result = await rp.process(envelope);
         return {
