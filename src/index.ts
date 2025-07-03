@@ -19,7 +19,7 @@ import { handleCallTool } from './handlers/callTool.js';
 // Create server instance (global for export)
 const server = new Server(
   {
-    name: "course-calendar",
+    name: "request_maker",
     version: "1.0.0",
   },
   {
